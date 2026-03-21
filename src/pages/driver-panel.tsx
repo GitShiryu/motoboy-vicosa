@@ -1,11 +1,24 @@
 import { useState, useEffect } from "react";
 import { supabase, type Order } from "@/lib/supabase";
-import { BellRing, MapPin, Package, CheckCircle, CreditCard, Banknote } from "lucide-react";
+import { BellRing, MapPin, Package, CheckCircle, CreditCard, Banknote, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function DriverPanel() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isOnline, setIsOnline] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email === "eliromulo1@hotmail.com" && password === "Isabelle2009") {
+      setIsAuthenticated(true);
+    } else {
+      alert("Credenciais incorretas!");
+    }
+  };
 
   useEffect(() => {
     // Busca iniciais pendentes
@@ -19,7 +32,7 @@ export default function DriverPanel() {
       if (data) setOrders(data as Order[]);
     };
 
-    if (isOnline) {
+    if (isOnline && isAuthenticated) {
       fetchPendingOrders();
 
       const channel = supabase
@@ -51,7 +64,7 @@ export default function DriverPanel() {
         supabase.removeChannel(channel);
       };
     }
-  }, [isOnline]);
+  }, [isOnline, isAuthenticated]);
 
   const playNotificationSound = () => {
     const audio = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg");
@@ -71,6 +84,45 @@ export default function DriverPanel() {
       alert("Erro ao aceitar corrida (Pode já ter sido pega)");
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <form onSubmit={handleLogin} className="bg-slate-800 p-8 rounded-3xl shadow-2xl max-w-sm w-full space-y-6 border border-slate-700">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-[#0B5D3B] text-[#FFDD00] rounded-full flex items-center justify-center">
+              <Lock className="w-8 h-8" />
+            </div>
+          </div>
+          <div className="text-center">
+            <h1 className="text-2xl font-black text-white">Login Restrito</h1>
+            <p className="text-slate-400 text-sm">Apenas Romão Motoboy</p>
+          </div>
+          <div className="space-y-4">
+            <Input 
+              type="email" 
+              placeholder="E-mail" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="bg-slate-900 border-slate-700 text-white h-12"
+              required 
+            />
+            <Input 
+              type="password" 
+              placeholder="Senha" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="bg-slate-900 border-slate-700 text-white h-12"
+              required 
+            />
+          </div>
+          <Button type="submit" className="w-full bg-[#FFDD00] hover:bg-[#ffed4a] text-[#212121] font-black h-14 rounded-xl">
+            ENTRAR NO PAINEL
+          </Button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans">
