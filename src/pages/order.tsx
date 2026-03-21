@@ -70,8 +70,8 @@ export default function OrderPage() {
     try {
       if (data.paymentMethod === "cash") {
         // Redireciona para o WhatsApp confirmando o pedido com pagamento em dinheiro
-        const motoboyPhone = "5531999999999"; // Substituir pelo número do Romão
-        let message = `Olá Romão! Preciso de uma entrega.\n\n`;
+        const motoboyPhone = "5531999999999"; // Substituir pelo número
+        let message = `Olá! Preciso de uma entrega.\n\n`;
         message += `📍 *Retirada:* ${data.originAddress}\n`;
         message += `🏁 *Entrega:* ${data.destinationAddress}\n`;
         message += `📦 *Volume:* ${data.volumeType === "bau" ? "Baú" : data.volumeType === "mochila" ? "Mochila" : "Sacola/Mãos"}\n`;
@@ -120,7 +120,7 @@ export default function OrderPage() {
             </div>
             <div>
               <h1 className="font-black text-xl leading-none">Entregas Rápidas</h1>
-              <p className="text-xs text-[#FFDD00] font-bold">com Romão Motoboy</p>
+              <p className="text-xs text-[#FFDD00] font-bold">Viçosa, MG</p>
             </div>
           </div>
         </div>

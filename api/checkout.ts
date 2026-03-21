@@ -34,7 +34,7 @@ export default async function handler(req: any, res: any) {
           price_data: {
             currency: "brl",
             product_data: {
-              name: "Entrega Rápida - Romão Motoboy",
+              name: "Entrega Rápida - Transporte",
               description: `De: ${origin}\nPara: ${destination}\nVolume: ${volumeLabel}`,
             },
             unit_amount: Math.round(price * 100), // Stripe expects cents
