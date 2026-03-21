@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/lib/supabase";
 
 const orderSchema = z.object({
   originAddress: z.string().min(1, "Origem obrigatória"),
@@ -68,9 +69,25 @@ export default function OrderPage() {
   const onSubmit = async (data: OrderFormData) => {
     setIsSubmitting(true);
     try {
+      // 1. Salvar no Supabase para tocar no painel Uber-like do Romão
+      const { error } = await supabase.from('orders').insert([{
+        origin: data.originAddress,
+        destination: data.destinationAddress,
+        volume_type: data.volumeType,
+        payment_method: data.paymentMethod,
+        price: estimatedPrice,
+        status: 'pending',
+        observation: data.observation,
+        change_for: data.changeFor
+      }]).select().single();
+
+      if (error) {
+        console.error("Erro Supabase:", error);
+        // Mesmo com erro de DB, vamos prosseguir para não travar o cliente
+      }
       if (data.paymentMethod === "cash") {
         // Redireciona para o WhatsApp confirmando o pedido com pagamento em dinheiro
-        const motoboyPhone = "5531999999999"; // Substituir pelo número
+        const motoboyPhone = "5531983517700"; // Substituir pelo número
         let message = `Olá! Preciso de uma entrega.\n\n`;
         message += `📍 *Retirada:* ${data.originAddress}\n`;
         message += `🏁 *Entrega:* ${data.destinationAddress}\n`;
