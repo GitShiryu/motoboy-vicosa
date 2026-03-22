@@ -92,7 +92,7 @@ export default function OrderPage() {
         message += `📍 *Retirada:* ${data.originAddress}\n`;
         message += `🏁 *Entrega:* ${data.destinationAddress}\n`;
         message += `📦 *Volume:* ${data.volumeType === "bau" ? "Baú" : data.volumeType === "mochila" ? "Mochila" : "Sacola/Mãos"}\n`;
-        message += `💵 *Pagamento:* Dinheiro\n`;
+        message += `💵 *Pagamento:* Na Entrega (Dinheiro - S/ Cartão)\n`;
         message += `💰 *Valor Estimado:* R$ ${estimatedPrice?.toFixed(2)}\n`;
         if (data.changeFor) message += `Troco para: R$ ${data.changeFor}\n`;
         if (data.observation) message += `📝 *Obs:* ${data.observation}\n`;
@@ -264,7 +264,7 @@ export default function OrderPage() {
                     className={`h-14 justify-start gap-3 border-2 rounded-xl transition-all ${paymentMethod === "pix_stripe" ? "border-[#0B5D3B] bg-[#0B5D3B]/5 ring-1 ring-[#0B5D3B]" : "border-slate-200"}`}
                   >
                     <QrCode className={`w-5 h-5 ${paymentMethod === "pix_stripe" ? "text-[#0B5D3B]" : "text-slate-500"}`} />
-                    <span className={`font-black ${paymentMethod === "pix_stripe" ? "text-[#0B5D3B]" : "text-[#212121]"}`}>PIX Rápido</span>
+                    <span className={`font-black ${paymentMethod === "pix_stripe" ? "text-[#0B5D3B]" : "text-[#212121]"}`}>PIX (Pagar Online)</span>
                   </Button>
                   <Button
                     type="button"
@@ -273,7 +273,7 @@ export default function OrderPage() {
                     className={`h-14 justify-start gap-3 border-2 rounded-xl transition-all ${paymentMethod === "card_stripe" ? "border-[#0B5D3B] bg-[#0B5D3B]/5 ring-1 ring-[#0B5D3B]" : "border-slate-200"}`}
                   >
                     <CreditCard className={`w-5 h-5 ${paymentMethod === "card_stripe" ? "text-[#0B5D3B]" : "text-slate-500"}`} />
-                    <span className={`font-black ${paymentMethod === "card_stripe" ? "text-[#0B5D3B]" : "text-[#212121]"}`}>Cartão de Crédito/Débito</span>
+                    <span className={`font-black ${paymentMethod === "card_stripe" ? "text-[#0B5D3B]" : "text-[#212121]"}`}>Cartão Crédito/Débito (Online)</span>
                   </Button>
                   <Button
                     type="button"
@@ -282,7 +282,7 @@ export default function OrderPage() {
                     className={`h-14 justify-start gap-3 border-2 rounded-xl transition-all ${paymentMethod === "cash" ? "border-[#0B5D3B] bg-[#0B5D3B]/5 ring-1 ring-[#0B5D3B]" : "border-slate-200"}`}
                   >
                     <Wallet className={`w-5 h-5 ${paymentMethod === "cash" ? "text-[#0B5D3B]" : "text-slate-500"}`} />
-                    <span className={`font-black ${paymentMethod === "cash" ? "text-[#0B5D3B]" : "text-[#212121]"}`}>Dinheiro na hora</span>
+                    <span className={`font-black ${paymentMethod === "cash" ? "text-[#0B5D3B]" : "text-[#212121]"}`}>Na Entrega (Dinheiro - S/ Cartão)</span>
                   </Button>
                 </div>
 
