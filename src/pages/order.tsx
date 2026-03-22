@@ -128,6 +128,10 @@ export default function OrderPage() {
 
   return (
     <div className="min-h-[100dvh] bg-slate-50 flex flex-col items-center">
+  const { user, isAdmin } = useAuth();
+  
+  return (
+    <div className="min-h-[100dvh] bg-slate-50 flex flex-col items-center">
       {/* Header */}
       <header className="w-full bg-[#0B5D3B] text-white p-4 shadow-md sticky top-0 z-10">
         <div className="max-w-md mx-auto flex items-center justify-between">
@@ -137,19 +141,37 @@ export default function OrderPage() {
             </div>
             <div>
               <h1 className="font-black text-xl leading-none uppercase tracking-tighter">Motoboy em Viçosa</h1>
-              <p className="text-[10px] text-[#FFDD00] font-bold uppercase tracking-widest">Portal Administrativo</p>
+              <p className="text-[10px] text-[#FFDD00] font-bold uppercase tracking-widest">
+                {isAdmin ? "Portal Administrativo" : "Portal do Cliente"}
+              </p>
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="rounded-xl bg-white/10 hover:bg-white/20 border border-white/10"
-            onClick={() => window.location.href = '/login'}
-          >
-            <Package className="w-5 h-5 text-white" /> {/* Reusing package icon for 'portal' feel */}
-          </Button>
+          <div className="flex items-center gap-2">
+            {user ? (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 w-10 h-10"
+                onClick={() => window.location.href = isAdmin ? '/admin' : '/painel'}
+              >
+                <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-[8px] font-black">
+                  {user.email?.[0].toUpperCase()}
+                </div>
+              </Button>
+            ) : (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 w-10 h-10"
+                onClick={() => window.location.href = '/login'}
+              >
+                <Package className="w-5 h-5 text-white" />
+              </Button>
+            )}
+          </div>
         </div>
       </header>
+
 
 
       {/* Main Content */}
@@ -167,21 +189,33 @@ export default function OrderPage() {
                   <div className="absolute left-3 top-9 w-3 h-3 bg-blue-500 rounded-full z-10" />
                   <div className="absolute left-4 top-12 bottom-[-10px] w-[2px] bg-slate-200 z-0" />
                   <Label className="font-bold text-[#212121]">Endereço de Retirada</Label>
-                  <Input 
-                    placeholder="Rua, número, bairro..." 
-                    className="pl-10 h-12 bg-slate-50 border-slate-200 font-medium rounded-xl"
-                    {...form.register("originAddress")}
-                  />
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="Rua, número, bairro..." 
+                      className="pl-10 h-12 bg-slate-50 border-slate-200 font-medium rounded-xl flex-1"
+                      {...form.register("originAddress")}
+                    />
+                    <Button variant="ghost" className="h-12 w-12 bg-slate-100 rounded-xl" type="button">
+                      <Search className="w-5 h-5 text-slate-400" />
+                    </Button>
+                  </div>
+
                 </div>
 
                 <div className="space-y-2 relative">
                   <div className="absolute left-3 top-9 w-3 h-3 bg-[#FFDD00] rounded-full z-10" />
                   <Label className="font-bold text-[#212121]">Endereço de Entrega</Label>
-                  <Input 
-                    placeholder="Para onde vou levar?" 
-                    className="pl-10 h-12 bg-slate-50 border-slate-200 font-black rounded-xl"
-                    {...form.register("destinationAddress")}
-                  />
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="Para onde vou levar?" 
+                      className="pl-10 h-12 bg-slate-50 border-slate-200 font-black rounded-xl flex-1"
+                      {...form.register("destinationAddress")}
+                    />
+                    <Button variant="ghost" className="h-12 w-12 bg-slate-100 rounded-xl" type="button">
+                      <Search className="w-5 h-5 text-slate-400" />
+                    </Button>
+                  </div>
+
                 </div>
               </div>
 
