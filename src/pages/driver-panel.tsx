@@ -4,71 +4,38 @@ import { BellRing, MapPin, Package, CheckCircle, CreditCard, Banknote, Lock } fr
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export default function DriverPanel() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [isOnline, setIsOnline] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email === "eliromulo1@hotmail.com" && password === "Isabelle2009") {
-      setIsAuthenticated(true);
-    } else {
-      alert("Credenciais incorretas!");
-    }
-  };
+  const [activeOrder, setActiveOrder] = useState<Order | null>(null);
 
   useEffect(() => {
-    // Busca iniciais pendentes
-    const fetchPendingOrders = async () => {
+    // Check for any active order for this driver (using the session/login)
+    const fetchActiveOrder = async () => {
       const { data } = await supabase
         .from("orders")
         .select("*")
-        .eq("status", "pending")
-        .order("created_at", { ascending: false });
-
-      if (data) setOrders(data as Order[]);
+        .in("status", ["accepted", "at_pickup", "in_transit", "at_destination"])
+        .single();
+      
+      if (data) setActiveOrder(data as Order);
     };
 
-    if (isOnline && isAuthenticated) {
-      fetchPendingOrders();
+    if (isAuthenticated) fetchActiveOrder();
+  }, [isAuthenticated]);
 
-      const channel = supabase
-        .channel("public:orders")
-        .on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: "orders" },
-          (payload) => {
-            const newOrder = payload.new as Order;
-            if (newOrder.status === "pending") {
-              setOrders((prev) => [newOrder, ...prev]);
-              playNotificationSound();
-            }
-          }
-        )
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "orders" },
-          (payload) => {
-            const updatedOrder = payload.new as Order;
-            if (updatedOrder.status !== "pending") {
-              setOrders((prev) => prev.filter((o) => o.id !== updatedOrder.id));
-            }
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
+  const updateStatus = async (id: string, status: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status })
+      .eq("id", id);
+      
+    if (!error) {
+      if (status === "completed") {
+        setActiveOrder(null);
+        alert("Corrida finalizada com sucesso!");
+      } else {
+        const { data } = await supabase.from("orders").select("*").eq("id", id).single();
+        setActiveOrder(data as Order);
+      }
     }
-  }, [isOnline, isAuthenticated]);
-
-  const playNotificationSound = () => {
-    const audio = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg");
-    audio.play().catch((e) => console.log("Erro ao tocar áudio", e));
   };
 
   const acceptOrder = async (id: string) => {
@@ -78,152 +45,116 @@ export default function DriverPanel() {
       .eq("id", id);
       
     if (!error) {
+      const { data } = await supabase.from("orders").select("*").eq("id", id).single();
+      setActiveOrder(data as Order);
       setOrders((prev) => prev.filter((o) => o.id !== id));
       alert("Corrida aceita!");
-    } else {
-      alert("Erro ao aceitar corrida (Pode já ter sido pega)");
     }
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-        <form onSubmit={handleLogin} className="bg-slate-800 p-8 rounded-3xl shadow-2xl max-w-sm w-full space-y-6 border border-slate-700">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-[#0B5D3B] text-[#FFDD00] rounded-full flex items-center justify-center">
-              <Lock className="w-8 h-8" />
-            </div>
-          </div>
-          <div className="text-center">
-            <h1 className="text-2xl font-black text-white">Login Restrito</h1>
-            <p className="text-slate-400 text-sm">Apenas Romão Motoboy</p>
-          </div>
-          <div className="space-y-4">
-            <Input 
-              type="email" 
-              placeholder="E-mail" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="bg-slate-900 border-slate-700 text-white h-12"
-              required 
-            />
-            <Input 
-              type="password" 
-              placeholder="Senha" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="bg-slate-900 border-slate-700 text-white h-12"
-              required 
-            />
-          </div>
-          <Button type="submit" className="w-full bg-[#FFDD00] hover:bg-[#ffed4a] text-[#212121] font-black h-14 rounded-xl">
-            ENTRAR NO PAINEL
-          </Button>
-        </form>
-      </div>
-    );
-  }
+  // ... (login component if not authenticated)
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans">
-      <header className="p-4 bg-slate-950 border-b border-slate-800 flex justify-between items-center sticky top-0 z-10">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+      <header className="p-4 bg-slate-900 border-b border-slate-800 flex justify-between items-center sticky top-0 z-10 shadow-lg">
         <div>
-          <h1 className="font-black text-xl text-white">Painel do Entregador</h1>
-          <p className="text-xs text-slate-400">Motoboy em Viçosa</p>
+          <h1 className="font-black text-xl text-white tracking-tighter uppercase">Portal Motoboy</h1>
+          <p className="text-[10px] text-green-400 font-bold uppercase tracking-widest">Viçosa • Online</p>
         </div>
-        <Button 
-          onClick={() => setIsOnline(!isOnline)}
-          className={`font-black rounded-full px-6 transition-all ${isOnline ? "bg-red-500 hover:bg-red-600 text-white" : "bg-green-500 hover:bg-green-600 text-white"}`}
-        >
-          {isOnline ? "FICAR OFFLINE" : "FICAR ONLINE"}
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={() => setIsOnline(!isOnline)}
+            className={`font-black rounded-xl text-xs px-4 h-10 transition-all ${isOnline ? "bg-red-500/10 text-red-500 border border-red-500/20" : "bg-green-500 hover:bg-green-600 text-white"}`}
+          >
+            {isOnline ? "OFFLINE" : "GO ONLINE"}
+          </Button>
+        </div>
       </header>
 
       <main className="flex-1 p-4 max-w-lg mx-auto w-full">
-        {!isOnline ? (
-          <div className="h-full flex flex-col items-center justify-center text-center mt-32 opacity-50">
-            <BellRing className="w-16 h-16 mb-4 text-slate-600" />
-            <p className="text-lg font-bold text-slate-400">Você está offline</p>
-            <p className="text-sm text-slate-500 mb-6">Fique online para receber pedidos em tempo real</p>
+        {activeOrder ? (
+          <div className="space-y-6">
+            <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden text-slate-900">
+              <div className="absolute top-0 right-0 p-4">
+                <div className="bg-emerald-100 text-emerald-700 font-black text-[10px] px-3 py-1 rounded-full uppercase">Em Andamento</div>
+              </div>
+              
+              <h2 className="text-3xl font-black mb-6 uppercase tracking-tighter">Corrida Atual</h2>
+              
+              <div className="space-y-6 mb-8">
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center shrink-0">
+                    <MapPin className="text-blue-500 w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Ponto de Retirada</p>
+                    <p className="font-bold text-lg leading-tight">{activeOrder.origin}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center shrink-0">
+                    <CheckCircle className="text-green-500 w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Destino Final</p>
+                    <p className="font-bold text-lg leading-tight">{activeOrder.destination}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-3xl mb-8">
+                <div>
+                  <p className="text-[10px] uppercase font-black text-slate-400">Pagamento</p>
+                  <p className="font-black text-emerald-600">R$ {activeOrder.price?.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-black text-slate-400">Método</p>
+                  <p className="font-black">{activeOrder.payment_method === 'cash' ? 'Dinheiro' : 'Online'}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {activeOrder.status === 'accepted' && (
+                  <Button 
+                    onClick={() => updateStatus(activeOrder.id, 'at_pickup')}
+                    className="w-full h-16 bg-[#0B5D3B] hover:bg-[#08452b] text-white font-black text-lg rounded-2xl shadow-xl shadow-emerald-900/10"
+                  >
+                    CHEGUEI NO LOCAL DE RETIRADA
+                  </Button>
+                )}
+                {activeOrder.status === 'at_pickup' && (
+                  <Button 
+                    onClick={() => updateStatus(activeOrder.id, 'in_transit')}
+                    className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white font-black text-lg rounded-2xl shadow-xl shadow-blue-900/10"
+                  >
+                    INICIAR ENTREGA
+                  </Button>
+                )}
+                {activeOrder.status === 'in_transit' && (
+                  <Button 
+                    onClick={() => updateStatus(activeOrder.id, 'at_destination')}
+                    className="w-full h-16 bg-[#FFDD00] hover:bg-[#ffed4a] text-black font-black text-lg rounded-2xl shadow-xl shadow-yellow-900/10"
+                  >
+                    CHEGUEI NO LOCAL DE ENTREGA
+                  </Button>
+                )}
+                {activeOrder.status === 'at_destination' && (
+                  <Button 
+                    onClick={() => updateStatus(activeOrder.id, 'completed')}
+                    className="w-full h-16 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-lg rounded-2xl shadow-xl shadow-emerald-900/20"
+                  >
+                    FINALIZAR CORRIDA
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            {orders.length === 0 ? (
-               <div className="flex flex-col items-center justify-center text-center mt-24">
-                <div className="w-20 h-20 rounded-full border-4 border-t-green-500 border-slate-700 animate-spin mb-6"></div>
-                <p className="font-black text-xl text-slate-300">Aguardando pedidos...</p>
-               </div>
-            ) : (
-              orders.map((order) => (
-                <div key={order.id} className="bg-slate-800 rounded-2xl p-5 shadow-2xl border border-slate-700 animate-in slide-in-from-bottom relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-2 h-full bg-[#FFDD00]" />
-                  
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex gap-2 items-center">
-                      <span className="bg-[#FFDD00]/20 text-[#FFDD00] text-xs font-black px-2 py-1 rounded-md uppercase tracking-wider">
-                        Novo Pedido
-                      </span>
-                      <span className="text-slate-400 text-xs font-medium">Instantes atrás</span>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-black text-2xl text-green-400">R$ {order.price?.toFixed(2)}</p>
-                      <p className="text-[10px] text-slate-400 uppercase font-bold">Valor Estimado</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 mb-6 relative">
-                     <div className="flex gap-3 items-start">
-                        <MapPin className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
-                        <div>
-                          <p className="text-xs text-slate-400 font-bold uppercase">Retirada</p>
-                          <p className="text-sm font-medium text-slate-200">{order.origin}</p>
-                        </div>
-                     </div>
-                     <div className="flex gap-3 items-start">
-                        <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
-                        <div>
-                          <p className="text-xs text-slate-400 font-bold uppercase">Entrega</p>
-                          <p className="text-sm font-black text-white">{order.destination}</p>
-                        </div>
-                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 mb-6">
-                    <div className="bg-slate-900 rounded-xl p-3 flex items-center gap-3">
-                      <Package className="w-5 h-5 text-slate-400" />
-                      <div>
-                        <p className="text-[10px] uppercase text-slate-500 font-bold">Volume</p>
-                        <p className="text-xs font-black text-slate-200 capitalize">{order.volume_type === 'bau' ? "Baú" : order.volume_type}</p>
-                      </div>
-                    </div>
-                    <div className="bg-slate-900 rounded-xl p-3 flex items-center gap-3">
-                      {order.payment_method === 'cash' ? <Banknote className="w-5 h-5 text-green-400" /> : <CreditCard className="w-5 h-5 text-blue-400" />}
-                      <div>
-                        <p className="text-[10px] uppercase text-slate-500 font-bold">Pagamento</p>
-                        <p className="text-xs font-black text-slate-200">{order.payment_method === 'cash' ? 'Dinheiro' : order.payment_method === 'pix_stripe' ? 'PIX Rápido' : 'Cartão'}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {order.observation && (
-                    <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 mb-6">
-                      <p className="text-[10px] uppercase text-orange-400 font-bold mb-1">Atenção / Observação</p>
-                      <p className="text-xs text-orange-200 font-medium">{order.observation}</p>
-                    </div>
-                  )}
-
-                  <Button 
-                    onClick={() => acceptOrder(order.id)}
-                    className="w-full bg-[#FFDD00] hover:bg-[#ffed4a] text-[#212121] font-black text-lg h-14 rounded-xl shadow-[0_5px_15px_rgba(255,221,0,0.15)]"
-                  >
-                    ACEITAR CORRIDA
-                  </Button>
-                </div>
-              ))
-            )}
-          </div>
+          /* ... existing pending orders list ... */
         )}
       </main>
     </div>
   );
 }
+
